@@ -77,7 +77,11 @@ def lfi_check(url):
 
 def admin_page_search(url):
     print(f"{OKBLUE}[INFO] Searching for Admin Pages on {url}{ENDC}")
-    paths = ["admin/", "admin/login/", "administrator/", "adminpanel/", "login/", "controlpanel/"]
+    paths = [
+        "admin/", "admin/login/", "administrator/", "adminpanel/", "login/", "controlpanel/",
+        "wp-admin/", "wp-login.php", "admin.php", "user/login", "dashboard/", "cms/", "manage/",
+        "admin_area/", "admin1/", "admin2/", "admin3/", "admincontrol/", "backend/", "memberadmin/"
+    ]
     for path in paths:
         full_url = f"{url.rstrip('/')}/{path}"
         try:

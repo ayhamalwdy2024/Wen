@@ -2,6 +2,10 @@ import requests
 import argparse
 import subprocess
 import webbrowser
+import os
+import platform
+import sys
+import shutil
 
 # معلومات المبرمج
 programmer_name = "Ayham Alwdy"
@@ -9,7 +13,7 @@ programmer_phone = "+00963938627021"
 programmer_facebook = "Ayham Alwdy"
 programmer_email = "ayhamalwdy2024@gmail.com"
 programmer_github = "https://github.com/ayhamalwdy2024/webtools-"
-syrian_flag = "🇸🇾"  # رمز علم سوريا
+syrian_flag = "🇸🇾"
 programmer_nationality = "Syrian"
 programmer_location = "Germany"
 programmer_study = "Cybersecurity at Technical University of Berlin"
@@ -40,6 +44,30 @@ def print_banner():
     print(f"{program_description}")
     print("-" * 50)
 
+def install_required_libraries():
+    """
+    تثبيت المكتبات والأدوات المطلوبة تلقائيًا إذا لم تكن مثبتة
+    """
+    print(f"{OKBLUE}[INFO] Checking and installing required libraries and tools...{ENDC}")
+    
+    # تثبيت مكتبة requests إذا لم تكن موجودة
+    try:
+        import requests
+    except ImportError:
+        print(f"{WARNING}[INFO] Installing 'requests' library...{ENDC}")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    
+    # التحقق من وجود الأدوات الخارجية مثل nmap و sqlmap
+    tools = {
+        "nmap": "sudo apt install -y nmap" if platform.system().lower() != "android" else "pkg install -y nmap",
+        "sqlmap": "sudo apt install -y sqlmap" if platform.system().lower() != "android" else "pkg install -y sqlmap",
+    }
+    
+    for tool, install_command in tools.items():
+        if not shutil.which(tool):
+            print(f"{WARNING}[INFO] {tool} is not installed. Installing...{ENDC}")
+            os.system(install_command)
+
 def gather_info(url):
     print(f"{OKBLUE}[INFO] Gathering Information for {url}{ENDC}")
     try:
@@ -52,21 +80,23 @@ def gather_info(url):
 
 def check_sql_injection(url):
     print(f"{OKBLUE}[INFO] Checking for SQL Injection at {url}{ENDC}")
+    if not shutil.which("sqlmap"):
+        print(f"{FAIL}[ERROR] sqlmap not found. Please install sqlmap.{ENDC}")
+        return
     try:
         subprocess.call(['sqlmap', '-u', url, '--batch'])
-    except FileNotFoundError:
-        print(f"{FAIL}[ERROR] sqlmap not found. Make sure sqlmap is installed.{ENDC}")
+    except Exception as e:
+        print(f"{FAIL}[ERROR] {e}{ENDC}")
 
 def check_xss(url):
     print(f"{OKBLUE}[INFO] Checking for XSS at {url}{ENDC}")
-    # منطق فحص XSS هنا
-    # يمكن إضافة تحليل مخصص لمكتبات مثل OWASP ZAP
+    # Placeholder for XSS logic
 
 def check_lfi(url):
     print(f"{OKBLUE}[INFO] Checking for LFI at {url}{ENDC}")
     lfi_payloads = ["../../../../etc/passwd", "../etc/passwd"]
     for payload in lfi_payloads:
-        lfi_url = f"{url}/{payload}"
+        lfi_url = f"{url.rstrip('/')}/{payload}"
         try:
             response = requests.get(lfi_url)
             if "root:x" in response.text:
@@ -78,15 +108,17 @@ def check_lfi(url):
 
 def check_csrf(url):
     print(f"{OKBLUE}[INFO] Checking for CSRF at {url}{ENDC}")
-    # منطق فحص CSRF هنا
-    # يمكن استخدام أدوات مثل OWASP CSRFTester
+    # Placeholder for CSRF logic
 
 def run_nmap(target):
     print(f"{OKBLUE}[INFO] Running nmap on {target}{ENDC}")
+    if not shutil.which("nmap"):
+        print(f"{FAIL}[ERROR] nmap not found. Please install nmap.{ENDC}")
+        return
     try:
         subprocess.call(['nmap', '-sV', target])
-    except FileNotFoundError:
-        print(f"{FAIL}[ERROR] nmap not found. Make sure nmap is installed.{ENDC}")
+    except Exception as e:
+        print(f"{FAIL}[ERROR] {e}{ENDC}")
 
 def open_webpage(url):
     print(f"{OKBLUE}[INFO] Opening {url} in web browser{ENDC}")
@@ -113,6 +145,9 @@ def find_admin_pages(url):
             print(f"{FAIL}[ERROR] {e}{ENDC}")
 
 def main():
+    # تثبيت المكتبات والأدوات المطلوبة تلقائيًا
+    install_required_libraries()
+    
     parser = argparse.ArgumentParser(description="Web Vulnerability Scanner")
     parser.add_argument("url", help="Target URL")
     parser.add_argument("--nmap", help="Run nmap on target", action="store_true")

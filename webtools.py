@@ -41,17 +41,61 @@ def install_required_libraries():
             print(f"{WARNING}[INFO] {tool} is not installed. Installing...{ENDC}")
             os.system(install_command)
 
+def sql_injection_check(url):
+    print(f"{OKBLUE}[INFO] Checking for SQL Injection on {url}{ENDC}")
+    try:
+        subprocess.call(["sqlmap", "-u", url, "--batch"])
+    except Exception as e:
+        print(f"{FAIL}[ERROR] {e}{ENDC}")
+
+def xss_check(url):
+    print(f"{OKBLUE}[INFO] Checking for XSS on {url}{ENDC}")
+    payload = "<script>alert('XSS')</script>"
+    try:
+        response = requests.get(url, params={"q": payload})
+        if payload in response.text:
+            print(f"{FAIL}[VULNERABLE] XSS Detected!{ENDC}")
+        else:
+            print(f"{OKGREEN}[SAFE] No XSS vulnerability detected.{ENDC}")
+    except requests.RequestException as e:
+        print(f"{FAIL}[ERROR] {e}{ENDC}")
+
+def lfi_check(url):
+    print(f"{OKBLUE}[INFO] Checking for LFI on {url}{ENDC}")
+    payloads = ["../../../../etc/passwd", "../etc/passwd"]
+    for payload in payloads:
+        full_url = f"{url}/{payload}"
+        try:
+            response = requests.get(full_url)
+            if "root:x" in response.text:
+                print(f"{FAIL}[VULNERABLE] LFI Detected with payload: {payload}{ENDC}")
+                return
+            else:
+                print(f"{OKGREEN}[SAFE] No LFI with payload: {payload}{ENDC}")
+        except requests.RequestException as e:
+            print(f"{FAIL}[ERROR] {e}{ENDC}")
+
+def admin_page_search(url):
+    print(f"{OKBLUE}[INFO] Searching for Admin Pages on {url}{ENDC}")
+    paths = ["admin/", "admin/login/", "administrator/", "adminpanel/", "login/", "controlpanel/"]
+    for path in paths:
+        full_url = f"{url.rstrip('/')}/{path}"
+        try:
+            response = requests.get(full_url)
+            if response.status_code == 200:
+                print(f"{OKGREEN}[FOUND] Admin page found: {full_url}{ENDC}")
+            else:
+                print(f"{WARNING}[NOT FOUND] Tried: {full_url}{ENDC}")
+        except requests.RequestException as e:
+            print(f"{FAIL}[ERROR] {e}{ENDC}")
+
 def tool_selection_menu():
     print(f"{OKGREEN}--- Vulnerability Type Selection ---{ENDC}")
     tools = [
         "SQL Injection Check",
         "XSS Check",
         "LFI Check",
-        "CSRF Check",
         "Admin Page Search",
-        "Directory Traversal Check",
-        "Subdomain Enumeration",
-        "Open Redirect Check",
         "Exit",
     ]
     for index, tool in enumerate(tools, 1):
@@ -67,41 +111,21 @@ def main():
         choice = tool_selection_menu()
         if choice == "1":
             url = input("Enter target URL for SQL Injection Check: ")
-            print(f"{OKGREEN}Performing SQL Injection Check on {url}...{ENDC}")
-            subprocess.call(["sqlmap", "-u", url, "--batch"])
+            sql_injection_check(url)
         elif choice == "2":
             url = input("Enter target URL for XSS Check: ")
-            print(f"{OKGREEN}Performing XSS Check on {url}...{ENDC}")
-            # Add XSS check logic here
+            xss_check(url)
         elif choice == "3":
             url = input("Enter target URL for LFI Check: ")
-            print(f"{OKGREEN}Performing LFI Check on {url}...{ENDC}")
-            # Add LFI check logic here
+            lfi_check(url)
         elif choice == "4":
-            url = input("Enter target URL for CSRF Check: ")
-            print(f"{OKGREEN}Performing CSRF Check on {url}...{ENDC}")
-            # Add CSRF check logic here
-        elif choice == "5":
             url = input("Enter target URL for Admin Page Search: ")
-            print(f"{OKGREEN}Searching for Admin Pages on {url}...{ENDC}")
-            # Add admin page search logic here
-        elif choice == "6":
-            url = input("Enter target URL for Directory Traversal Check: ")
-            print(f"{OKGREEN}Performing Directory Traversal Check on {url}...{ENDC}")
-            # Add Directory Traversal check logic here
-        elif choice == "7":
-            url = input("Enter target URL for Subdomain Enumeration: ")
-            print(f"{OKGREEN}Performing Subdomain Enumeration on {url}...{ENDC}")
-            # Add Subdomain Enumeration logic here
-        elif choice == "8":
-            url = input("Enter target URL for Open Redirect Check: ")
-            print(f"{OKGREEN}Performing Open Redirect Check on {url}...{ENDC}")
-            # Add Open Redirect check logic here
-        elif choice == "9":
+            admin_page_search(url)
+        elif choice == "5":
             print(f"{OKBLUE}Exiting the tool. Goodbye!{ENDC}")
             break
         else:
-            print(f"{FAIL}Invalid choice. Please enter a number from 1 to 9.{ENDC}")
+            print(f"{FAIL}Invalid choice. Please enter a number from 1 to 5.{ENDC}")
 
 if __name__ == "__main__":
     main()

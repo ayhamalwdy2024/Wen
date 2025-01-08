@@ -1,3 +1,4 @@
+
 import requests
 import subprocess
 import sys
@@ -25,13 +26,18 @@ def print_header():
     print(f"{OKBLUE}Email: {programmer_email}{ENDC}")
     print("-" * 50)
 
-def install_required_libraries():
-    print(f"{OKBLUE}[INFO] Checking and installing required libraries...{ENDC}")
+def install_required_tools():
+    """تثبيت جميع المكتبات والأدوات المطلوبة"""
+    print(f"{OKBLUE}[INFO] Checking and installing required libraries and tools...{ENDC}")
+    
+    # تثبيت مكتبة requests
     try:
         import requests
     except ImportError:
         print(f"{WARNING}[INFO] Installing 'requests' library...{ENDC}")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    
+    # أدوات النظام
     tools = {
         "nmap": "sudo apt install -y nmap" if platform.system().lower() != "android" else "pkg install -y nmap",
         "sqlmap": "sudo apt install -y sqlmap" if platform.system().lower() != "android" else "pkg install -y sqlmap",
@@ -40,13 +46,17 @@ def install_required_libraries():
         if not shutil.which(tool):
             print(f"{WARNING}[INFO] {tool} is not installed. Installing...{ENDC}")
             os.system(install_command)
+        else:
+            print(f"{OKGREEN}[INFO] {tool} is already installed.{ENDC}")
 
 def sql_injection_check(url):
     print(f"{OKBLUE}[INFO] Checking for SQL Injection on {url}{ENDC}")
     try:
-        subprocess.call(["sqlmap", "-u", url, "--batch"])
-    except Exception as e:
-        print(f"{FAIL}[ERROR] {e}{ENDC}")
+        subprocess.run(["sqlmap", "-u", url, "--batch"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"{FAIL}[ERROR] Command failed: {e}{ENDC}")
+    except FileNotFoundError:
+        print(f"{FAIL}[ERROR] sqlmap not found. Ensure it is installed.{ENDC}")
 
 def xss_check(url):
     print(f"{OKBLUE}[INFO] Checking for XSS on {url}{ENDC}")
@@ -108,7 +118,7 @@ def tool_selection_menu():
     return choice
 
 def main():
-    install_required_libraries()
+    install_required_tools()
     print_header()
 
     while True:
